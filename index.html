@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cliente Oculto Duque • 2.1</title><style>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cliente Oculto Duque • 2.3</title><style>
 :root{font:16px system-ui,Arial;color:#173143;background:#f3f6f8}*{box-sizing:border-box}body{margin:0}header{background:#103d4e;color:#fff;padding:16px 5%}header h1{font-size:21px;margin:0}main{max-width:960px;margin:auto;padding:18px}section,.panel{background:#fff;border:1px solid #dce5e9;border-radius:14px;padding:18px;margin-bottom:16px}h2{margin:0 0 14px;font-size:20px}h3{font-size:16px}label{display:block;font-size:14px;font-weight:600;margin:10px 0 4px}input,select,textarea{width:100%;padding:12px;border:1px solid #b8c9d1;border-radius:9px;font:inherit}input[type=checkbox],input[type=radio]{width:auto}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.btn,button{border:0;background:#106c73;color:white;border-radius:9px;padding:11px 15px;font-weight:650;cursor:pointer}.btn.secondary,button.secondary{background:#e6eef1;color:#163844}.btn.danger{background:#a52c38}button:disabled{opacity:.55}.hidden{display:none!important}.muted{color:#58717c;font-size:13px}.item{border-top:1px solid #e2e9ec;padding:12px 0}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.tabs button{background:#e5eef1;color:#173143}.tabs button.active{background:#106c73;color:#fff}.status{background:#e8f5ed;padding:10px;border-radius:8px}.error{background:#fff0f0;color:#8d2020;padding:10px;border-radius:8px}.q{padding:14px;border:1px solid #e1e8eb;border-radius:10px;margin:10px 0}.q .row label{display:inline-flex;gap:6px;align-items:center;margin:0}.small{font-size:13px}.score{font-weight:700;color:#086b6c}.badge{display:inline-block;background:#e6eef1;border-radius:20px;padding:4px 9px;font-size:12px}.w100{width:100%}@media(min-width:720px){.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}}@media(max-width:600px){.row{align-items:stretch}.row>*{flex:auto}}
 
 /* Retomada da experiência mobile da versão 1.6 */
@@ -26,7 +26,22 @@ main{max-width:880px;padding:12px}section,.panel{padding:16px;border-radius:16px
 .operator-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.operator-info{min-width:0;overflow-wrap:anywhere}.operator-row button{min-width:92px;min-height:44px}.operator-row .badge{font-size:12px}#operatorForm button{min-height:48px}@media(max-width:600px){.operator-row{align-items:flex-start}.operator-row button{font-size:13px}}
 
 .dash-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}.dash-kpi{padding:15px;background:#f5fafb;border:1px solid #dce5e9;border-radius:12px}.dash-kpi strong{display:block;font-size:26px;color:#0e5963}.dash-kpi small{font-size:12px;color:#516c76}.dash-chart{margin:14px 0;padding:14px;background:#fff;border:1px solid #dce5e9;border-radius:12px}.dash-bar-row{display:grid;grid-template-columns:minmax(85px,1.2fr) minmax(100px,3fr) 70px;align-items:center;gap:8px;margin:12px 0;font-size:13px}.dash-bar-row span:first-child{overflow-wrap:anywhere}.dash-track{height:15px;background:#e3edef;border-radius:10px;overflow:hidden}.dash-fill{height:100%;background:#0e7b78;border-radius:10px}.dash-chart h3{margin-top:0}.dash-empty{padding:16px;background:#f6fafb;border-radius:10px;color:#536d75}.dash-table{width:100%;border-collapse:collapse;font-size:13px}.dash-table th,.dash-table td{padding:9px 6px;border-bottom:1px solid #e2ebee;text-align:left}.dash-table-wrap{overflow-x:auto}.dash-chart svg{max-width:100%;height:auto;display:block}.dash-legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12px;margin:9px 0}.dash-dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px}.dash-dot.posto{background:#087b80}.dash-dot.conveniencia{background:#d58b33}@media(min-width:720px){.dash-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:460px){.dash-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-kpi strong{font-size:22px}.dash-bar-row{grid-template-columns:minmax(72px,1.3fr) minmax(70px,2fr) 57px;font-size:11px}}
-</style></head><body><header><h1>Cliente Oculto · Duque</h1><div class="small">Versão 2.2 · Pontuação e drilldowns</div></header><main><div id="message" aria-live="polite"></div>
+
+.dash-section{border:1px solid #dce5e9;border-radius:13px;margin:14px 0;background:#fff;overflow:hidden}
+.dash-section>summary{cursor:pointer;padding:16px;font-size:16px;font-weight:750;color:#123e4c;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.dash-section>summary:after{content:"−";font-size:22px;color:#0e7b78}
+.dash-section:not([open])>summary:after{content:"+"}
+.dash-section-body{padding:0 14px 14px}
+.dash-section .dash-chart{border:0;padding:6px 0}
+.dash-click{cursor:pointer;border:1px solid transparent;border-radius:8px;padding:5px}
+.dash-click:hover,.dash-click:focus{background:#e6f5f1;border-color:#88b9b6}
+.dash-click:focus-visible{outline:2px solid #0e7b78}
+.dash-metric{font-size:12px;color:#496673}
+.dash-graphic-row{display:grid;grid-template-columns:minmax(110px,1.2fr) minmax(100px,3fr) 100px;align-items:center;gap:8px;margin:12px 0;font-size:13px}
+.dash-graphic-row button{background:none;color:#184b57;text-align:left;padding:6px;font-size:13px}
+.dash-graphic-row button:hover{background:#e6f5f1}
+@media(max-width:520px){.dash-graphic-row{grid-template-columns:minmax(85px,1fr) minmax(70px,1.5fr) 75px;font-size:11px}.dash-graphic-row button{font-size:11px;padding:4px}}
+</style></head><body><header><h1>Cliente Oculto · Duque</h1><div class="small">Versão 2.3 · Dashboard gráfico</div></header><main><div id="message" aria-live="polite"></div>
 <section id="login"><h2>Entrar</h2><p class="muted">Use o e-mail cadastrado no Supabase.</p><form id="loginForm"><label>E-mail</label><input id="email" type="email" required autocomplete="email"><label>Senha</label><input id="password" type="password" required autocomplete="current-password"><p><button type="submit">Entrar</button> <button type="button" class="secondary" id="reset">Recuperar senha</button></p></form></section>
 <section id="newPassword" class="hidden"><h2>Definir nova senha</h2><form id="passwordForm"><label>Nova senha (mínimo 8 caracteres)</label><input id="newPass" type="password" minlength="8" required><p><button>Salvar senha</button></p></form></section>
 <div id="app" class="hidden"><div class="panel row"><div><b id="userName"></b><div id="userRole" class="muted"></div></div><button id="logout" class="secondary">Sair</button></div><div class="tabs" id="tabs"></div>
@@ -147,7 +162,7 @@ function dashBarRows(data,max=100,suffix='%'){
 function dashMonthlyChart(data){
  if(!data.length)return '<p class="dash-empty">Ainda não há evolução temporal para exibir.</p>';
  let months=[...new Set(data.map(v=>v.data_visita?.slice(0,7)).filter(Boolean))].sort().slice(-12);
- if(!months.length)return '<p class="dash-empty">Preencha a data da visita para visualizar a evolução mensal.</p>';
+ if(months.length<2)return '<p class="dash-empty">Gráfico oculto: selecione pelo menos dois meses com avaliações para visualizar a evolução.</p>';
  let W=620,H=235,L=44,R=16,T=15,B=43, iw=W-L-R,ih=H-T-B;
  let parts=['<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Evolução mensal do aproveitamento por tipo de avaliação">'];
  for(let t=0;t<=100;t+=25){let y=T+ih*(1-t/100);parts.push('<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#e2eaee"/><text x="'+(L-7)+'" y="'+(y+4)+'" font-size="11" fill="#58717c" text-anchor="end">'+t+'%</text>')}
@@ -156,6 +171,7 @@ function dashMonthlyChart(data){
  parts.push('</svg>');return '<div class="dash-legend"><span><i class="dash-dot posto"></i>Posto</span><span><i class="dash-dot conveniencia"></i>Conveniência</span></div>'+parts.join('');
 }
 function dashAggregate(data,keyFn){let groups=new Map();data.forEach(v=>{let key=keyFn(v);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(v)});return [...groups].map(([name,items])=>({name,value:items.reduce((s,v)=>s+dashPercent(v),0)/items.length,count:items.length})).sort((a,b)=>b.value-a.value)}
+function dashSection(id,title,body){return '<details class="dash-section" data-section="'+id+'"><summary>'+title+'</summary><div class="dash-section-body">'+body+'</div></details>'}
 function renderDashboard(){
  if(profile?.papel!=='administrador')return;
  let region=$('dashRegion').value,post=$('dashPost').value,shift=$('dashShift').value;
@@ -165,19 +181,19 @@ function renderDashboard(){
  const filtered=dashFiltered(),done=filtered.filter(v=>v.status==='concluida'&&!v.inativa&&dashPercent(v)!==null),draft=filtered.filter(v=>v.status==='rascunho'),inactive=filtered.filter(v=>v.inativa);
  let mean=arr=>arr.length?dashFormat(arr.reduce((s,v)=>s+dashPercent(v),0)/arr.length)+'%':'—';
  const kpis=[['Concluídas válidas',done.length],['Em andamento',draft.length],['Inativas',inactive.length],['Média Postos',mean(done.filter(v=>v.formulario==='posto'))],['Média Conveniência',mean(done.filter(v=>v.formulario==='conveniencia'))],['Unidades avaliadas',new Set(done.map(v=>v.posto_id)).size],['Regionais avaliadas',new Set(done.map(v=>dashPost(v)?.regional).filter(Boolean)).size]];
- let html='<div class="dash-kpis">'+kpis.map(([name,value])=>'<div class="dash-kpi"><small>'+name+'</small><strong>'+escapeHtml(value)+'</strong></div>').join('')+'</div>';
- html+=dashPointsPanel(done);
- html+='<div class="dash-chart"><h3>Evolução mensal da qualidade</h3>'+dashMonthlyChart(done)+'</div>';
- html+='<div class="dash-chart"><h3>Regionais · clique para detalhar os postos</h3>'+dashClickableGroups(done,'regional')+'</div>';
- html+='<div class="dash-chart"><h3>Unidades · clique para detalhar as avaliações</h3>'+dashClickableGroups(done,'posto')+'</div>';
- html+='<div class="dash-chart"><h3>Ranking de unidades</h3><p class="muted">Classificação pelo percentual médio, com quantidade de avaliações para contextualizar o resultado.</p>'+dashRankings(done)+'</div>';
- html+='<div class="dash-chart"><h3>Conformidade por pergunta</h3><p class="muted">Taxa de respostas SIM por pergunta, considerando apenas avaliações concluídas e ativas. Clique em uma pergunta para ver os registros correspondentes.</p>'+dashQuestionAnalytics(done)+'</div>';
- html+='<div class="dash-chart"><h3>Evolução em relação ao mês anterior</h3>'+dashComparison(done)+'</div>';
+ let opened=new Set([...document.querySelectorAll('#dashContent .dash-section[open]')].map(x=>x.dataset.section));let html='<div class="dash-kpis">'+kpis.map(([name,value])=>'<div class="dash-kpi"><small>'+name+'</small><strong>'+escapeHtml(value)+'</strong></div>').join('')+'</div>';
+ html+=dashSection('score','Pontuação média por avaliação',dashPointsPanel(done));
+ html+=dashSection('monthly','Evolução mensal da qualidade',dashMonthlyChart(done));
+ html+=dashSection('regions','Regionais · clique para detalhar os postos',dashClickableGroups(done,'regional'));
+ html+=dashSection('posts','Unidades · clique para detalhar as avaliações',dashClickableGroups(done,'posto'));
+ html+=dashSection('ranking','Ranking gráfico de unidades',dashRankings(done));
+ html+=dashSection('questions','Conformidade por pergunta',dashQuestionAnalytics(done));
+ html+=dashSection('comparison','Comparativo com mês anterior',dashComparison(done));
  html+='<div id="dashDetail" class="dash-chart hidden"></div>';
  html+='<p class="muted">Base: '+filtered.length+' avaliações no filtro. As médias consideram somente avaliações concluídas, ativas e com pontuação possível maior que zero. Os dados são atualizados ao recarregar o aplicativo.</p>';
- $('dashContent').innerHTML=html;
+ $('dashContent').innerHTML=html;for(const el of document.querySelectorAll('#dashContent .dash-section')){el.open=opened.size?opened.has(el.dataset.section):['score','monthly','regions','ranking'].includes(el.dataset.section)}
  $('dashContent').querySelectorAll('[data-dash-question]').forEach(b=>b.onclick=()=>dashQuestionDetail(Number(b.dataset.dashQuestion)));
- $('dashContent').querySelectorAll('[data-dash-group]').forEach(b=>b.onclick=()=>dashGroupDetail(b.dataset.dashGroup,b.dataset.dashKey));
+ $('dashContent').querySelectorAll('[data-dash-group]').forEach(b=>{b.onclick=()=>dashGroupDetail(b.dataset.dashGroup,b.dataset.dashKey);if(b.getAttribute('role')==='button')b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}}});
 }
 
 async function loadDashAnswers(){
@@ -188,10 +204,11 @@ async function loadDashAnswers(){
  }catch(e){dashLoaded=false;err(e)}
 }
 function dashRankings(done){
- let rows=dashAggregate(done,v=>dashPost(v)?.nome||'Unidade não identificada');
+ let map=new Map();done.forEach(v=>{let k=String(v.posto_id),x=map.get(k)||{key:k,name:dashPost(v)?.nome||'Unidade',items:[]};x.items.push(v);map.set(k,x)});
+ let rows=[...map.values()].map(x=>({...x,...dashPointSummary(x.items)})).sort((a,b)=>b.percent-a.percent);
  if(!rows.length)return '<p class="dash-empty">Sem avaliações válidas no período.</p>';
- let rowHtml=(arr)=>arr.map((r,i)=>'<tr><td>'+escapeHtml(r.name)+'</td><td>'+r.count+'</td><td><b>'+dashFormat(r.value)+'%</b></td></tr>').join('');
- return '<div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Unidade</th><th>Avaliações</th><th>Média</th></tr></thead><tbody>'+rowHtml(rows.slice(0,5))+'</tbody></table></div><h4>Unidades com menor aproveitamento</h4><div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Unidade</th><th>Avaliações</th><th>Média</th></tr></thead><tbody>'+rowHtml([...rows].reverse().slice(0,5))+'</tbody></table></div>';
+ let render=(arr)=>'<div class="dash-legend"><span>Barra: aproveitamento ponderado</span><span>À direita: pontos conquistados / possíveis</span></div>'+arr.map(r=>'<div class="dash-graphic-row"><button type="button" data-dash-group="posto" data-dash-key="'+escapeHtml(r.key)+'">'+escapeHtml(r.name)+' <small>('+r.count+')</small></button><div class="dash-track"><div class="dash-fill" style="width:'+r.percent.toFixed(2)+'%"></div></div><strong>'+r.earned+' / '+r.possible+'<small style="display:block">'+dashFormat(r.percent)+'%</small></strong></div>').join('');
+ return '<h4>Maiores pontuações proporcionais</h4>'+render(rows.slice(0,10))+'<h4>Menores pontuações proporcionais</h4>'+render([...rows].reverse().slice(0,10))+'<p class="muted">Os pontos apresentados correspondem à soma das avaliações do período selecionado. O ranking usa percentual ponderado para comparar formulários com máximos diferentes.</p>';
 }
 function dashQuestionAnalytics(done){
  if(!dashLoaded)return '<p class="dash-empty">Carregando respostas para análise...</p>';
@@ -209,26 +226,25 @@ function dashComparison(done){
 }
 function dashQuestionDetail(qid){
  let filtered=dashFiltered().filter(v=>v.status==='concluida'&&!v.inativa),ids=new Set(filtered.map(v=>v.id));let matching=dashAnswers.filter(r=>r.pergunta_id===qid&&ids.has(r.avaliacao_id));let q=questions.find(x=>x.id===qid);let target=$('dashDetail');if(!q||!target)return;
- target.classList.remove('hidden');let yes=matching.filter(r=>r.resposta===true).length,no=matching.filter(r=>r.resposta===false).length;target.innerHTML='<h3>Registros da pergunta</h3><p>'+escapeHtml(ver(q)?.texto||'')+'</p><button class="secondary" id="dashCloseDetail">Fechar detalhes</button><div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Avaliação</th><th>Unidade</th><th>Data</th><th>Resposta</th></tr></thead><tbody>'+matching.map(r=>{let v=visits.find(x=>x.id===r.avaliacao_id);return '<tr><td>'+escapeHtml(v?.numero_visita||'—')+'</td><td>'+escapeHtml(dashPost(v)?.nome||'—')+'</td><td>'+escapeHtml(v?.data_visita||'—')+'</td><td>'+(r.resposta?'SIM':'NÃO')+'</td></tr>'}).join('')+'</tbody></table></div>';
+ let yes=matching.filter(r=>r.resposta===true).length,no=matching.filter(r=>r.resposta===false).length;
+ let byRegion=new Map();matching.forEach(r=>{let v=visits.find(x=>x.id===r.avaliacao_id);if(!v)return;let key=dashPost(v)?.regional||'Sem regional',g=byRegion.get(key)||{yes:0,no:0};if(r.resposta===true)g.yes++;else g.no++;byRegion.set(key,g)});
+ target.classList.remove('hidden');
+ target.innerHTML='<h3>Detalhamento gráfico da pergunta</h3><p>'+escapeHtml(ver(q)?.texto||'')+'</p><button class="secondary" id="dashCloseDetail">Fechar detalhes</button>'+dashResponseGraph(yes,no)+'<h4>Conformidade por regional</h4>'+[...byRegion].sort((a,b)=>(a[1].yes/(a[1].yes+a[1].no))-(b[1].yes/(b[1].yes+b[1].no))).map(([name,g])=>{let pct=100*g.yes/(g.yes+g.no);return '<div class="dash-graphic-row"><span>'+escapeHtml(name)+'</span><div class="dash-track"><div class="dash-fill" style="width:'+pct.toFixed(2)+'%"></div></div><strong>'+dashFormat(pct)+'% <small>('+g.yes+'/'+(g.yes+g.no)+')</small></strong></div>'}).join('')+'<details><summary>Ver avaliações individuais ('+matching.length+')</summary><div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Avaliação</th><th>Unidade</th><th>Data</th><th>Resposta</th></tr></thead><tbody>'+matching.map(r=>{let v=visits.find(x=>x.id===r.avaliacao_id);return '<tr><td>'+escapeHtml(v?.numero_visita||'—')+'</td><td>'+escapeHtml(dashPost(v)?.nome||'—')+'</td><td>'+escapeHtml(v?.data_visita||'—')+'</td><td>'+(r.resposta?'SIM':'NÃO')+'</td></tr>'}).join('')+'</tbody></table></div></details>';
  $('dashCloseDetail').onclick=()=>target.classList.add('hidden');target.scrollIntoView({behavior:'smooth',block:'start'});
 }
-
-
 function dashPoints(v){return Number(v.pontos_obtidos)||0}
 function dashPossible(v){return Number(v.pontos_possiveis)||0}
 function dashSum(arr,fn){return arr.reduce((sum,v)=>sum+fn(v),0)}
 function dashPointSummary(arr){let earned=dashSum(arr,dashPoints),possible=dashSum(arr,dashPossible);return {earned,possible,lost:possible-earned,count:arr.length,percent:possible?100*earned/possible:0}}
 function dashPointsPanel(done){
- let total=dashPointSummary(done),posto=dashPointSummary(done.filter(v=>v.formulario==='posto')),loja=dashPointSummary(done.filter(v=>v.formulario==='conveniencia'));
- let k=[['Pontos conquistados',total.earned],['Pontos possíveis',total.possible],['Pontos não conquistados',total.lost],['Pontos · Posto',posto.earned+' / '+posto.possible],['Pontos · Conveniência',loja.earned+' / '+loja.possible]];
- let groups=[['Posto',posto],['Conveniência',loja]];
- return '<div class="dash-chart"><h3>Pontuação acumulada das avaliações</h3><p class="muted">Soma dos pesos das respostas válidas. Compare tipos distintos pelo percentual, pois seus máximos são diferentes.</p><div class="dash-kpis">'+k.map(([a,b])=>'<div class="dash-kpi"><small>'+a+'</small><strong>'+b+'</strong></div>').join('')+'</div>'+groups.map(([name,g])=>'<p><b>'+name+'</b> · '+g.earned+' de '+g.possible+' pontos · '+g.lost+' pontos não conquistados</p><div class="dash-track" style="height:18px"><div class="dash-fill" style="width:'+g.percent.toFixed(2)+'%"></div></div>').join('')+'</div>';
+ let groups=[['Posto',done.filter(v=>v.formulario==='posto')],['Conveniência',done.filter(v=>v.formulario==='conveniencia')]];
+ return '<p class="muted">Pontuação média por avaliação, com referência ao máximo do formulário. Os valores variam conforme os filtros.</p><div class="dash-kpis">'+groups.map(([name,arr])=>{let g=dashPointSummary(arr),avg=arr.length?g.earned/arr.length:0,possible=arr.length?g.possible/arr.length:0;return '<div class="dash-kpi"><small>'+name+' · '+g.count+' avaliações</small><strong>'+dashFormat(avg,1)+' / '+dashFormat(possible,1)+'</strong><small>Média de pontos conquistados / possíveis por avaliação</small><div class="dash-track"><div class="dash-fill" style="width:'+g.percent.toFixed(2)+'%"></div></div><small>'+dashFormat(g.percent)+'% de aproveitamento ponderado</small></div>'}).join('')+'</div>';
 }
 function dashClickableGroups(done,kind){
- let groups=new Map();done.forEach(v=>{let key=kind==='regional'?(dashPost(v)?.regional||'Sem regional'):String(v.posto_id),label=kind==='regional'?key:(dashPost(v)?.nome||'Unidade não identificada');if(!groups.has(key))groups.set(key,{key,label,items:[]});groups.get(key).items.push(v)});
- let rows=[...groups.values()].map(g=>({...g,...dashPointSummary(g.items)})).sort((a,b)=>b.count-a.count);
+ let groups=new Map();done.forEach(v=>{let key=kind==='regional'?(dashPost(v)?.regional||'Sem regional'):String(v.posto_id),label=kind==='regional'?key:(dashPost(v)?.nome||'Unidade');if(!groups.has(key))groups.set(key,{key,label,items:[]});groups.get(key).items.push(v)});
+ let rows=[...groups.values()].map(g=>({...g,...dashPointSummary(g.items)})).sort((a,b)=>b.percent-a.percent);
  if(!rows.length)return '<p class="dash-empty">Sem dados para este filtro.</p>';
- return '<div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>'+ (kind==='regional'?'Regional':'Unidade') +'</th><th>Avaliações</th><th>Conquistados</th><th>Possíveis</th><th>Perdidos</th><th>Percentual ponderado</th></tr></thead><tbody>'+rows.map(r=>'<tr><td><button type="button" class="secondary" data-dash-group="'+kind+'" data-dash-key="'+escapeHtml(r.key)+'">'+escapeHtml(r.label)+'</button></td><td>'+r.count+'</td><td>'+r.earned+'</td><td>'+r.possible+'</td><td>'+r.lost+'</td><td>'+dashFormat(r.percent)+'%</td></tr>').join('')+'</tbody></table></div>';
+ return '<p class="muted">Clique na barra ou no nome para abrir o detalhamento. Barra: percentual de pontos conquistados.</p>'+rows.map(r=>'<div class="dash-graphic-row"><button type="button" data-dash-group="'+kind+'" data-dash-key="'+escapeHtml(r.key)+'">'+escapeHtml(r.label)+' <small>('+r.count+')</small></button><div class="dash-track dash-click" role="button" tabindex="0" data-dash-group="'+kind+'" data-dash-key="'+escapeHtml(r.key)+'" aria-label="Detalhar '+escapeHtml(r.label)+'"><div class="dash-fill" style="width:'+r.percent.toFixed(2)+'%"></div></div><strong>'+r.earned+' / '+r.possible+'<small style="display:block">'+dashFormat(r.percent)+'%</small></strong></div>').join('');
 }
 function dashResponseGraph(yes,no){let total=yes+no,p=total?yes/total*100:0;return '<h4>Distribuição gráfica das respostas</h4><div class="dash-legend"><span><i class="dash-dot posto"></i>SIM: '+yes+'</span><span><i class="dash-dot conveniencia"></i>NÃO: '+no+'</span></div><div style="display:flex;height:25px;overflow:hidden;border-radius:8px;background:#e6ecee"><div style="width:'+p.toFixed(2)+'%;background:#087b80"></div><div style="flex:1;background:#d58b33"></div></div><p class="muted">SIM: '+dashFormat(p)+'% · NÃO: '+dashFormat(100-p)+'%</p>'}
 function dashGroupDetail(kind,key){
