@@ -26,7 +26,7 @@ main{max-width:880px;padding:12px}section,.panel{padding:16px;border-radius:16px
 .operator-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.operator-info{min-width:0;overflow-wrap:anywhere}.operator-row button{min-width:92px;min-height:44px}.operator-row .badge{font-size:12px}#operatorForm button{min-height:48px}@media(max-width:600px){.operator-row{align-items:flex-start}.operator-row button{font-size:13px}}
 
 .dash-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}.dash-kpi{padding:15px;background:#f5fafb;border:1px solid #dce5e9;border-radius:12px}.dash-kpi strong{display:block;font-size:26px;color:#0e5963}.dash-kpi small{font-size:12px;color:#516c76}.dash-chart{margin:14px 0;padding:14px;background:#fff;border:1px solid #dce5e9;border-radius:12px}.dash-bar-row{display:grid;grid-template-columns:minmax(85px,1.2fr) minmax(100px,3fr) 70px;align-items:center;gap:8px;margin:12px 0;font-size:13px}.dash-bar-row span:first-child{overflow-wrap:anywhere}.dash-track{height:15px;background:#e3edef;border-radius:10px;overflow:hidden}.dash-fill{height:100%;background:#0e7b78;border-radius:10px}.dash-chart h3{margin-top:0}.dash-empty{padding:16px;background:#f6fafb;border-radius:10px;color:#536d75}.dash-table{width:100%;border-collapse:collapse;font-size:13px}.dash-table th,.dash-table td{padding:9px 6px;border-bottom:1px solid #e2ebee;text-align:left}.dash-table-wrap{overflow-x:auto}.dash-chart svg{max-width:100%;height:auto;display:block}.dash-legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12px;margin:9px 0}.dash-dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px}.dash-dot.posto{background:#087b80}.dash-dot.conveniencia{background:#d58b33}@media(min-width:720px){.dash-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:460px){.dash-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-kpi strong{font-size:22px}.dash-bar-row{grid-template-columns:minmax(72px,1.3fr) minmax(70px,2fr) 57px;font-size:11px}}
-</style></head><body><header><h1>Cliente Oculto · Duque</h1><div class="small">Versão 2.1 · Indicadores gerenciais</div></header><main><div id="message" aria-live="polite"></div>
+</style></head><body><header><h1>Cliente Oculto · Duque</h1><div class="small">Versão 2.2 · Pontuação e drilldowns</div></header><main><div id="message" aria-live="polite"></div>
 <section id="login"><h2>Entrar</h2><p class="muted">Use o e-mail cadastrado no Supabase.</p><form id="loginForm"><label>E-mail</label><input id="email" type="email" required autocomplete="email"><label>Senha</label><input id="password" type="password" required autocomplete="current-password"><p><button type="submit">Entrar</button> <button type="button" class="secondary" id="reset">Recuperar senha</button></p></form></section>
 <section id="newPassword" class="hidden"><h2>Definir nova senha</h2><form id="passwordForm"><label>Nova senha (mínimo 8 caracteres)</label><input id="newPass" type="password" minlength="8" required><p><button>Salvar senha</button></p></form></section>
 <div id="app" class="hidden"><div class="panel row"><div><b id="userName"></b><div id="userRole" class="muted"></div></div><button id="logout" class="secondary">Sair</button></div><div class="tabs" id="tabs"></div>
@@ -166,9 +166,10 @@ function renderDashboard(){
  let mean=arr=>arr.length?dashFormat(arr.reduce((s,v)=>s+dashPercent(v),0)/arr.length)+'%':'—';
  const kpis=[['Concluídas válidas',done.length],['Em andamento',draft.length],['Inativas',inactive.length],['Média Postos',mean(done.filter(v=>v.formulario==='posto'))],['Média Conveniência',mean(done.filter(v=>v.formulario==='conveniencia'))],['Unidades avaliadas',new Set(done.map(v=>v.posto_id)).size],['Regionais avaliadas',new Set(done.map(v=>dashPost(v)?.regional).filter(Boolean)).size]];
  let html='<div class="dash-kpis">'+kpis.map(([name,value])=>'<div class="dash-kpi"><small>'+name+'</small><strong>'+escapeHtml(value)+'</strong></div>').join('')+'</div>';
+ html+=dashPointsPanel(done);
  html+='<div class="dash-chart"><h3>Evolução mensal da qualidade</h3>'+dashMonthlyChart(done)+'</div>';
- html+='<div class="dash-chart"><h3>Aproveitamento por regional</h3><p class="muted">Média percentual das avaliações válidas; não é a soma de pontos.</p>'+dashBarRows(dashAggregate(done,v=>dashPost(v)?.regional||'Sem regional').slice(0,20))+'</div>';
- html+='<div class="dash-chart"><h3>Aproveitamento por unidade</h3>'+dashBarRows(dashAggregate(done,v=>dashPost(v)?.nome||'Unidade não identificada').slice(0,15))+'</div>';
+ html+='<div class="dash-chart"><h3>Regionais · clique para detalhar os postos</h3>'+dashClickableGroups(done,'regional')+'</div>';
+ html+='<div class="dash-chart"><h3>Unidades · clique para detalhar as avaliações</h3>'+dashClickableGroups(done,'posto')+'</div>';
  html+='<div class="dash-chart"><h3>Ranking de unidades</h3><p class="muted">Classificação pelo percentual médio, com quantidade de avaliações para contextualizar o resultado.</p>'+dashRankings(done)+'</div>';
  html+='<div class="dash-chart"><h3>Conformidade por pergunta</h3><p class="muted">Taxa de respostas SIM por pergunta, considerando apenas avaliações concluídas e ativas. Clique em uma pergunta para ver os registros correspondentes.</p>'+dashQuestionAnalytics(done)+'</div>';
  html+='<div class="dash-chart"><h3>Evolução em relação ao mês anterior</h3>'+dashComparison(done)+'</div>';
@@ -176,6 +177,7 @@ function renderDashboard(){
  html+='<p class="muted">Base: '+filtered.length+' avaliações no filtro. As médias consideram somente avaliações concluídas, ativas e com pontuação possível maior que zero. Os dados são atualizados ao recarregar o aplicativo.</p>';
  $('dashContent').innerHTML=html;
  $('dashContent').querySelectorAll('[data-dash-question]').forEach(b=>b.onclick=()=>dashQuestionDetail(Number(b.dataset.dashQuestion)));
+ $('dashContent').querySelectorAll('[data-dash-group]').forEach(b=>b.onclick=()=>dashGroupDetail(b.dataset.dashGroup,b.dataset.dashKey));
 }
 
 async function loadDashAnswers(){
@@ -207,8 +209,36 @@ function dashComparison(done){
 }
 function dashQuestionDetail(qid){
  let filtered=dashFiltered().filter(v=>v.status==='concluida'&&!v.inativa),ids=new Set(filtered.map(v=>v.id));let matching=dashAnswers.filter(r=>r.pergunta_id===qid&&ids.has(r.avaliacao_id));let q=questions.find(x=>x.id===qid);let target=$('dashDetail');if(!q||!target)return;
- target.classList.remove('hidden');target.innerHTML='<h3>Registros da pergunta</h3><p>'+escapeHtml(ver(q)?.texto||'')+'</p><button class="secondary" id="dashCloseDetail">Fechar detalhes</button><div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Avaliação</th><th>Unidade</th><th>Data</th><th>Resposta</th></tr></thead><tbody>'+matching.map(r=>{let v=visits.find(x=>x.id===r.avaliacao_id);return '<tr><td>'+escapeHtml(v?.numero_visita||'—')+'</td><td>'+escapeHtml(dashPost(v)?.nome||'—')+'</td><td>'+escapeHtml(v?.data_visita||'—')+'</td><td>'+(r.resposta?'SIM':'NÃO')+'</td></tr>'}).join('')+'</tbody></table></div>';
+ target.classList.remove('hidden');let yes=matching.filter(r=>r.resposta===true).length,no=matching.filter(r=>r.resposta===false).length;target.innerHTML='<h3>Registros da pergunta</h3><p>'+escapeHtml(ver(q)?.texto||'')+'</p><button class="secondary" id="dashCloseDetail">Fechar detalhes</button><div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Avaliação</th><th>Unidade</th><th>Data</th><th>Resposta</th></tr></thead><tbody>'+matching.map(r=>{let v=visits.find(x=>x.id===r.avaliacao_id);return '<tr><td>'+escapeHtml(v?.numero_visita||'—')+'</td><td>'+escapeHtml(dashPost(v)?.nome||'—')+'</td><td>'+escapeHtml(v?.data_visita||'—')+'</td><td>'+(r.resposta?'SIM':'NÃO')+'</td></tr>'}).join('')+'</tbody></table></div>';
  $('dashCloseDetail').onclick=()=>target.classList.add('hidden');target.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+
+function dashPoints(v){return Number(v.pontos_obtidos)||0}
+function dashPossible(v){return Number(v.pontos_possiveis)||0}
+function dashSum(arr,fn){return arr.reduce((sum,v)=>sum+fn(v),0)}
+function dashPointSummary(arr){let earned=dashSum(arr,dashPoints),possible=dashSum(arr,dashPossible);return {earned,possible,lost:possible-earned,count:arr.length,percent:possible?100*earned/possible:0}}
+function dashPointsPanel(done){
+ let total=dashPointSummary(done),posto=dashPointSummary(done.filter(v=>v.formulario==='posto')),loja=dashPointSummary(done.filter(v=>v.formulario==='conveniencia'));
+ let k=[['Pontos conquistados',total.earned],['Pontos possíveis',total.possible],['Pontos não conquistados',total.lost],['Pontos · Posto',posto.earned+' / '+posto.possible],['Pontos · Conveniência',loja.earned+' / '+loja.possible]];
+ let groups=[['Posto',posto],['Conveniência',loja]];
+ return '<div class="dash-chart"><h3>Pontuação acumulada das avaliações</h3><p class="muted">Soma dos pesos das respostas válidas. Compare tipos distintos pelo percentual, pois seus máximos são diferentes.</p><div class="dash-kpis">'+k.map(([a,b])=>'<div class="dash-kpi"><small>'+a+'</small><strong>'+b+'</strong></div>').join('')+'</div>'+groups.map(([name,g])=>'<p><b>'+name+'</b> · '+g.earned+' de '+g.possible+' pontos · '+g.lost+' pontos não conquistados</p><div class="dash-track" style="height:18px"><div class="dash-fill" style="width:'+g.percent.toFixed(2)+'%"></div></div>').join('')+'</div>';
+}
+function dashClickableGroups(done,kind){
+ let groups=new Map();done.forEach(v=>{let key=kind==='regional'?(dashPost(v)?.regional||'Sem regional'):String(v.posto_id),label=kind==='regional'?key:(dashPost(v)?.nome||'Unidade não identificada');if(!groups.has(key))groups.set(key,{key,label,items:[]});groups.get(key).items.push(v)});
+ let rows=[...groups.values()].map(g=>({...g,...dashPointSummary(g.items)})).sort((a,b)=>b.count-a.count);
+ if(!rows.length)return '<p class="dash-empty">Sem dados para este filtro.</p>';
+ return '<div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>'+ (kind==='regional'?'Regional':'Unidade') +'</th><th>Avaliações</th><th>Conquistados</th><th>Possíveis</th><th>Perdidos</th><th>Percentual ponderado</th></tr></thead><tbody>'+rows.map(r=>'<tr><td><button type="button" class="secondary" data-dash-group="'+kind+'" data-dash-key="'+escapeHtml(r.key)+'">'+escapeHtml(r.label)+'</button></td><td>'+r.count+'</td><td>'+r.earned+'</td><td>'+r.possible+'</td><td>'+r.lost+'</td><td>'+dashFormat(r.percent)+'%</td></tr>').join('')+'</tbody></table></div>';
+}
+function dashResponseGraph(yes,no){let total=yes+no,p=total?yes/total*100:0;return '<h4>Distribuição gráfica das respostas</h4><div class="dash-legend"><span><i class="dash-dot posto"></i>SIM: '+yes+'</span><span><i class="dash-dot conveniencia"></i>NÃO: '+no+'</span></div><div style="display:flex;height:25px;overflow:hidden;border-radius:8px;background:#e6ecee"><div style="width:'+p.toFixed(2)+'%;background:#087b80"></div><div style="flex:1;background:#d58b33"></div></div><p class="muted">SIM: '+dashFormat(p)+'% · NÃO: '+dashFormat(100-p)+'%</p>'}
+function dashGroupDetail(kind,key){
+ let done=dashFiltered().filter(v=>v.status==='concluida'&&!v.inativa&&dashPercent(v)!==null);
+ let items=done.filter(v=>kind==='regional'?(dashPost(v)?.regional||'Sem regional')===key:String(v.posto_id)===key);
+ let target=$('dashDetail');if(!target)return;
+ let g=dashPointSummary(items),title=kind==='regional'?'Regional: '+key:'Unidade: '+(dashPost(items[0])?.nome||key);
+ let table=kind==='regional'?dashClickableGroups(items,'posto'):'<div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Visita</th><th>Data</th><th>Tipo</th><th>Avaliador</th><th>Pontos</th><th>%</th></tr></thead><tbody>'+items.map(v=>'<tr><td>'+escapeHtml(v.numero_visita||'—')+'</td><td>'+escapeHtml(v.data_visita||'—')+'</td><td>'+escapeHtml(v.formulario)+'</td><td>'+escapeHtml(visitPerson(v))+'</td><td>'+dashPoints(v)+' / '+dashPossible(v)+'</td><td>'+dashFormat(dashPercent(v))+'%</td></tr>').join('')+'</tbody></table></div>';
+ target.classList.remove('hidden');target.innerHTML='<h3>'+escapeHtml(title)+'</h3><p><b>'+g.count+' avaliações</b> · '+g.earned+' / '+g.possible+' pontos · '+g.lost+' pontos não conquistados · '+dashFormat(g.percent)+'% ponderado</p><button class="secondary" id="dashCloseDetail">Fechar detalhes</button>'+table;
+ target.querySelector('#dashCloseDetail').onclick=()=>target.classList.add('hidden');target.querySelectorAll('[data-dash-group]').forEach(b=>b.onclick=()=>dashGroupDetail(b.dataset.dashGroup,b.dataset.dashKey));target.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function dashAggregatePending(drafts){let m=new Map();drafts.forEach(v=>{let key=v.avaliador_id,cur=m.get(key)||{name:visitPerson(v),count:0,oldest:null};cur.count++;let date=v.criada_em?.slice(0,10);if(date&&(!cur.oldest||date<cur.oldest))cur.oldest=date;m.set(key,cur)});return [...m.values()].sort((a,b)=>b.count-a.count)}
