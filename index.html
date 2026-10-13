@@ -73,10 +73,10 @@ main{max-width:880px;padding:12px}section,.panel{padding:16px;border-radius:16px
 .mgr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
 .mgr-card{border:1px solid #d7e4e7;border-radius:14px;background:#fff;padding:16px;min-width:0}
 .mgr-card h3{font-size:16px;margin:0 0 5px}.mgr-card .muted{font-size:12px;margin:0 0 12px}
-.mgr-canvas{position:relative;height:310px;width:100%}
+.mgr-canvas{position:relative;height:330px;width:100%}.mgr-canvas.mgr-tall{height:490px}.mgr-rank-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.mgr-rank-head h3{margin:0}.mgr-rank-head select{width:auto;max-width:190px;padding:8px}
 #mgrRegions,#mgrUnits{cursor:pointer}
 @media(max-width:750px){.mgr-grid{grid-template-columns:1fr}.mgr-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.mgr-canvas{height:290px}}
-</style></head><body><header><h1>Cliente Oculto · Duque</h1><div class="small">Versão 3.0 · Gráficos Gerenciais</div></header><main><div id="message" aria-live="polite"></div>
+</style></head><body><header><h1>Cliente Oculto · Duque</h1><div class="small">Versão 3.1 · Gráficos e Pendências</div></header><main><div id="message" aria-live="polite"></div>
 <section id="login"><h2>Entrar</h2><p class="muted">Use o e-mail cadastrado no Supabase.</p><form id="loginForm"><label>E-mail</label><input id="email" type="email" required autocomplete="email"><label>Senha</label><input id="password" type="password" required autocomplete="current-password"><p><button type="submit">Entrar</button> <button type="button" class="secondary" id="reset">Recuperar senha</button></p></form></section>
 <section id="newPassword" class="hidden"><h2>Definir nova senha</h2><form id="passwordForm"><label>Nova senha (mínimo 8 caracteres)</label><input id="newPass" type="password" minlength="8" required><p><button>Salvar senha</button></p></form></section>
 <div id="app" class="hidden"><div class="panel row"><div><b id="userName"></b><div id="userRole" class="muted"></div></div><button id="logout" class="secondary">Sair</button></div><div class="tabs" id="tabs"></div>
@@ -91,6 +91,10 @@ main{max-width:880px;padding:12px}section,.panel{padding:16px;border-radius:16px
 <div id="explCharts"></div>
 <div id="explDetail"></div>
 </div></section>
+<section id="pendingView" class="hidden">
+<h2>Pendências mensais de avaliação</h2><p class="muted">Controle de cobertura por unidade e tipo de avaliação. Somente avaliações concluídas e ativas são contabilizadas.</p>
+<div class="explorer"><label for="pendingMonth">Mês de referência</label><select id="pendingMonth"></select>
+<div id="pendingSummary"></div><div id="pendingCharts" class="mgr-grid"></div><div id="pendingLists"></div></div></section>
 <section id="editorView" class="hidden"><h2 id="visitTitle">Avaliação</h2><div id="editorBody"></div></section>
 <section id="postsView" class="hidden"><h2>Cadastro de postos</h2><p class="muted">O código é gerado pelo banco e não é reutilizado.</p><form id="postForm"><label>Nome da unidade</label><input id="postName" required maxlength="200"><button>Adicionar posto</button></form><label>Pesquisar postos</label><input id="postFilter" placeholder="Nome ou código"><div id="postList"></div></section>
 <section id="questionsView" class="hidden"><h2>Perguntas e ordem de exibição</h2><p class="muted">O código da pergunta nunca muda. Alterar a posição reorganiza apenas o formulário.</p><form id="questionForm"><div class="cols"><div><label>Formulário</label><select id="qForm"><option value="posto">Posto</option><option value="conveniencia">Loja de Conveniência</option></select></div><div><label>Bloco</label><select id="qBlock"><option value="A">A · Pontuação</option><option value="B">B · Complementar</option></select></div><div><label>Ordem desejada</label><input id="qOrder" type="number" min="1" value="1" required></div><div><label>Peso</label><input id="qWeight" type="number" min="0" value="10" required></div></div><label>Texto da pergunta</label><textarea id="qText" required rows="3"></textarea><button>Cadastrar pergunta</button></form><div id="questionList"></div></section>
@@ -108,9 +112,9 @@ function err(e){console.error(e);msg(e?.message||String(e),true)}
 async function request(query){const {data,error}=await query;if(error)throw error;return data}
 async function boot(){if(!window.supabase){msg('Não foi possível carregar a biblioteca Supabase. Verifique sua conexão com a internet.',true);return}sb=window.supabase.createClient(URL_SB,KEY_SB,{auth:{detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}});sb.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'||(event==='SIGNED_IN'&&location.hash.includes('type=invite'))){$('newPassword').classList.remove('hidden');$('login').classList.add('hidden');$('app').classList.add('hidden')}if(event==='SIGNED_OUT')showLoggedOut()});const {data:{session}}=await sb.auth.getSession();if(session){if(location.hash.includes('type=invite')||location.hash.includes('type=recovery')){$('newPassword').classList.remove('hidden');$('login').classList.add('hidden');$('app').classList.add('hidden')}else await enter(session.user)}}
 function showLoggedOut(){me=null;profile=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('newPassword').classList.add('hidden')}
-async function enter(user){try{me=user;profile=await request(sb.from('usuarios').select('id,nome,papel,ativo').eq('id',user.id).single());if(!profile.ativo)throw Error('Usuário inativo. Procure o administrador.');$('login').classList.add('hidden');$('app').classList.remove('hidden');$('userName').textContent=profile.nome||user.email;$('userRole').textContent=profile.papel==='administrador'?'Administrador':'Avaliador';$('tabs').innerHTML='<button data-view="home">Avaliações</button>'+(profile.papel==='administrador'?'<button data-view="dashboard">Indicadores</button><button data-view="posts">Postos</button><button data-view="questions">Perguntas</button><button data-view="users">Usuários</button>':'');$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>showView(b.dataset.view));await reload();showView('home');msg('Acesso autenticado ao Supabase.')}catch(e){err(e);await sb.auth.signOut()}}
+async function enter(user){try{me=user;profile=await request(sb.from('usuarios').select('id,nome,papel,ativo').eq('id',user.id).single());if(!profile.ativo)throw Error('Usuário inativo. Procure o administrador.');$('login').classList.add('hidden');$('app').classList.remove('hidden');$('userName').textContent=profile.nome||user.email;$('userRole').textContent=profile.papel==='administrador'?'Administrador':'Avaliador';$('tabs').innerHTML='<button data-view="home">Avaliações</button>'+(profile.papel==='administrador'?'<button data-view="dashboard">Indicadores</button><button data-view="pending">Pendências</button><button data-view="posts">Postos</button><button data-view="questions">Perguntas</button><button data-view="users">Usuários</button>':'');$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>showView(b.dataset.view));await reload();showView('home');msg('Acesso autenticado ao Supabase.')}catch(e){err(e);await sb.auth.signOut()}}
 async function reload(){posts=await request(sb.from('postos').select('*').order('codigo'));questions=await request(sb.from('perguntas').select('*').order('ordem_exibicao'));versions=await request(sb.from('versoes_perguntas').select('*'));visits=[];for(let off=0;off<50000;off+=800){let part=await request(sb.from('avaliacoes').select('*').order('criada_em',{ascending:false}).range(off,off+799));visits.push(...part);if(part.length<800)break;}people=profile.papel==='administrador'?await request(sb.from('usuarios').select('id,nome')):[{id:me.id,nome:profile.nome||me.email}];}
-function showView(name){for(const x of ['home','dashboard','editor','posts','questions','users'])$(x+'View').classList.toggle('hidden',x!==name);$('tabs').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='home')renderVisits();if(name==='dashboard'){renderExplorer();}if(name==='posts')renderPosts();if(name==='questions')renderQuestions();if(name==='users')renderUsers()}
+function showView(name){for(const x of ['home','dashboard','pending','editor','posts','questions','users'])$(x+'View').classList.toggle('hidden',x!==name);$('tabs').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='home')renderVisits();if(name==='dashboard'){renderExplorer();mgrLoadAnswers();}if(name==='pending')renderPending();if(name==='posts')renderPosts();if(name==='questions')renderQuestions();if(name==='users')renderUsers()}
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{let d=await request(sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value}));await enter(d.user)}catch(e){err(e)}};
 $('reset').onclick=async()=>{try{await request(sb.auth.resetPasswordForEmail($('email').value.trim(),{redirectTo:location.origin+location.pathname}));msg('Se o e-mail estiver cadastrado, você receberá instruções para redefinir a senha.')}catch(e){err(e)}};
 $('passwordForm').onsubmit=async e=>{e.preventDefault();try{await request(sb.auth.updateUser({password:$('newPass').value}));$('newPassword').classList.add('hidden');msg('Senha atualizada. Faça login para continuar.');await sb.auth.signOut()}catch(e){err(e)}};
@@ -188,11 +192,11 @@ async function renderUsers(){try{
  }catch(e){err(e)}}
 
 // Segmentação gerencial independente dos indicadores legados.
-const explState={month:'',type:new Set(),region:new Set(),post:new Set(),score:new Set()};
+const explState={month:'',type:new Set(),region:new Set(),post:new Set(),score:new Set()};let mgrRankType='posto';let mgrEvolutionRegion=null;
 function explValid(){return visits.filter(v=>v.status==='concluida'&&!v.inativa&&Number(v.pontos_possiveis)>0&&v.data_visita)}
 function explBand(v){let n=dashPercent(v);return n<50?'0–49%':n<70?'50–69%':n<85?'70–84%':'85–100%'}
 function explField(v,key){return key==='type'?v.formulario:key==='region'?(dashPost(v)?.regional||'Sem regional'):key==='post'?String(v.posto_id):explBand(v)}
-function explRows(exclude){return explValid().filter(v=>v.data_visita.slice(0,7)===explState.month&&['type','region','post','score'].every(key=>key===exclude||!explState[key].size||explState[key].has(explField(v,key))))}
+function explRows(exclude){return explValid().filter(v=>v.data_visita.slice(0,7)===explState.month&&['type','region','post'].every(key=>key===exclude||!explState[key].size||explState[key].has(explField(v,key))))}
 function explMonthOptions(){let months=[...new Set(explValid().map(v=>v.data_visita.slice(0,7)))].sort().reverse();if(!months.includes(explState.month))explState.month=months[0]||'';let el=$('explMonth');if(!el)return;el.innerHTML=months.map(m=>'<option value="'+m+'">'+new Date(m+'-02T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})+'</option>').join('');el.value=explState.month}
 function explLabel(key,value){if(key==='type')return value==='posto'?'Posto':'Conveniência';if(key==='post'){let p=posts.find(p=>String(p.id)===value);return p?p.nome:value}return value}
 function explSlice(key,title){let available=new Map();for(const v of explRows(key)){let val=explField(v,key);available.set(val,(available.get(val)||0)+1)}let options=key==='score'?['0–49%','50–69%','70–84%','85–100%']:key==='type'?['posto','conveniencia']:[...new Set([...available.keys(),...explState[key]])].sort((a,b)=>explLabel(key,a).localeCompare(explLabel(key,b),'pt-BR'));return '<div class="expl-slice"><h4>'+title+'</h4><div class="expl-options">'+options.map(value=>{let active=explState[key].has(value),count=available.get(value)||0;return '<button type="button" data-expl-key="'+key+'" data-expl-value="'+escapeHtml(value)+'" class="'+(active?'selected':'')+'" aria-pressed="'+active+'" '+(!count&&!active?'disabled':'')+'>'+escapeHtml(explLabel(key,value))+' ('+count+')</button>'}).join('')+'</div></div>'}
@@ -202,33 +206,95 @@ function mgrDestroy(){for(const chart of managerCharts)chart.destroy();managerCh
 function mgrGroup(rows,kind){const m=new Map();for(const v of rows){let key=kind==='type'?v.formulario:kind==='region'?(dashPost(v)?.regional||'Sem regional'):kind==='post'?String(v.posto_id):explBand(v);let g=m.get(key)||[];g.push(v);m.set(key,g)}return [...m].map(([key,arr])=>({key,label:explLabel(kind,key),...dashPointSummary(arr)}))}
 function mgrCard(title,id,description){return '<div class="mgr-card"><h3>'+title+'</h3><p class="muted">'+description+'</p><div class="mgr-canvas"><canvas id="'+id+'"></canvas></div></div>'}
 function explRenderCharts(rows){
- let total=dashPointSummary(rows),avg=rows.length?total.earned/rows.length:0;
- let html='<div class="mgr-kpis"><div><small>Avaliações</small><strong>'+rows.length+'</strong></div><div><small>Pontos médios / avaliação</small><strong>'+dashFormat(avg,1)+'</strong></div><div><small>Aproveitamento</small><strong>'+dashFormat(total.percent)+'%</strong></div><div><small>Unidades</small><strong>'+new Set(rows.map(v=>v.posto_id)).size+'</strong></div></div>';
- if(!rows.length)return html+'<p class="expl-empty">Nenhuma avaliação encontrada para esta combinação. Remova uma segmentação.</p>';
- return html+'<div class="mgr-grid">'+mgrCard('Distribuição por tipo','mgrTypes','Gráfico de rosca · clique para selecionar Posto ou Conveniência')+mgrCard('Faixas de pontuação','mgrScore','Gráfico de pizza · clique para selecionar uma faixa')+mgrCard('Desempenho por regional','mgrRegions','Barras horizontais · clique para detalhar a regional')+mgrCard('Ranking de unidades','mgrUnits','Barras horizontais · clique para selecionar uma unidade')+mgrCard('Pontuação por tipo','mgrPoints','Colunas · média de pontos conquistados e possíveis por avaliação')+mgrCard('Evolução por dia','mgrDays','Linha · percentual de pontos conquistados ao longo do mês')+'</div>';
+ let total=dashPointSummary(rows);
+ let html='<div class="mgr-kpis"><div><small>Avaliações no mês</small><strong>'+rows.length+'</strong></div><div><small>Pontos conquistados</small><strong>'+total.earned.toLocaleString('pt-BR')+'</strong></div><div><small>Pontos possíveis</small><strong>'+total.possible.toLocaleString('pt-BR')+'</strong></div><div><small>Aproveitamento</small><strong>'+dashFormat(total.percent)+'%</strong></div></div>';
+ if(!rows.length)return html+'<p class="expl-empty">Nenhuma avaliação para esta combinação. Ajuste os filtros.</p>';
+ return html+'<div class="mgr-grid">'+mgrCard('Avaliações por tipo','mgrTypes','Rosca: quantidade de avaliações')+mgrCard('Participação das regionais','mgrRegionPie','Pizza: quantidade de avaliações por regional')+mgrCard('Desempenho por regional','mgrRegions','Barras: aproveitamento (%) · clique para filtrar')+
+ '<div class="mgr-card"><div class="mgr-rank-head"><h3>Ranking por unidade</h3><select id="mgrRankType"><option value="posto">Posto</option><option value="conveniencia">Conveniência</option><option value="pista">Loja de Pista</option></select></div><p class="muted" id="mgrRankNote"></p><div class="mgr-canvas mgr-tall"><canvas id="mgrUnits"></canvas></div></div>'+
+ mgrCard('Pontuação por tipo de avaliação','mgrPoints','Pontos conquistados e não conquistados · totais do mês')+
+ '<div class="mgr-card"><div class="mgr-rank-head"><h3>Evolução mensal</h3><button class="secondary" id="mgrBackRegion" type="button" style="display:none">← Todas as regionais</button></div><p class="muted" id="mgrEvolutionNote">Histórico até o mês de referência. Clique em uma regional para ver as unidades.</p><div class="mgr-canvas"><canvas id="mgrMonths"></canvas></div></div></div>';
 }
 function mgrChart(id,config){let el=$(id);if(!el||!window.Chart)return;managerCharts.push(new Chart(el,config))}
 function mgrSelect(key,val){let set=explState[key];if(set.size===1&&set.has(val))set.clear();else{set.clear();set.add(val)}if(key==='region')explState.post.clear();renderExplorer()}
+// Rótulos visíveis sem depender do mouse: plugin Chart.js local ao painel.
+const mgrLabels={id:'mgrLabels',afterDatasetsDraw(chart,args,opts){
+ const {ctx,chartArea}=chart;if(!chartArea)return;ctx.save();ctx.font='bold 11px system-ui, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+ chart.data.datasets.forEach((ds,di)=>{let meta=chart.getDatasetMeta(di);if(meta.hidden)return;meta.data.forEach((el,i)=>{
+ let v=ds.data[i];if(v===null||v===undefined||!Number.isFinite(Number(v)))return;
+ let pos=el.tooltipPosition();let type=chart.config.type;let txt=opts?.suffix?Number(v).toLocaleString('pt-BR')+opts.suffix:Number(v).toLocaleString('pt-BR',{maximumFractionDigits:1});
+ if(type==='pie'||type==='doughnut'){
+  let total=ds.data.reduce((a,b)=>a+Number(b||0),0);if(!total||v/total<.065)return;
+  ctx.fillStyle='#fff';ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=3;ctx.fillText(txt,pos.x,pos.y);ctx.shadowBlur=0;
+ }else if(type==='bar'){
+  ctx.fillStyle='#153c47';let horizontal=chart.options.indexAxis==='y';
+  if(horizontal){ctx.textAlign='left';ctx.fillText(txt,Math.min(chartArea.right-38,pos.x+5),pos.y)}else ctx.fillText(txt,pos.x,Math.max(chartArea.top+10,pos.y-10));
+ }else if(type==='line'){ctx.fillStyle=ds.borderColor||'#174a54';ctx.fillText(txt,pos.x,Math.max(chartArea.top+9,pos.y-13))}
+ })});ctx.restore();
+}};
+if(window.Chart)Chart.register(mgrLabels);
+function mgrSettings(extra={}){return {responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{enabled:true},mgrLabels:{...extra}}}}
+function mgrRankRows(rows){
+ if(mgrRankType==='pista')return null;
+ return mgrGroup(rows.filter(v=>v.formulario===mgrRankType),'post').sort((a,b)=>b.percent-a.percent).slice(0,15);
+}
+function mgrRenderRanking(rows){
+ let chart=managerCharts.find(c=>c.canvas?.id==='mgrUnits');if(chart){chart.destroy();managerCharts=managerCharts.filter(c=>c!==chart)}
+ const note=$('mgrRankNote');if(!note)return;
+ const teal='#087f7a',blue='#2868a5';
+ if(mgrRankType==='pista'){
+  let selected=rows.filter(v=>v.formulario==='posto'&&v.avaliar_loja_pista===true);
+  let ids=new Set(selected.map(v=>v.id));let qs=new Set(questions.filter(q=>q.formulario==='posto'&&q.bloco==='B').map(q=>q.id));
+  let totals=new Map();
+  for(const r of dashAnswers){if(!ids.has(r.avaliacao_id)||!qs.has(r.pergunta_id))continue;let v=selected.find(x=>x.id===r.avaliacao_id);if(!v)continue;let k=String(v.posto_id),g=totals.get(k)||{key:k,label:dashPost(v)?.nome||'Unidade',yes:0,n:0};g.n++;if(r.resposta===true)g.yes++;totals.set(k,g)}
+  let list=[...totals.values()].map(g=>({...g,percent:100*g.yes/g.n})).sort((a,b)=>b.percent-a.percent).slice(0,15);
+  note.textContent='Loja de Pista: conformidade das perguntas do bloco B (sem peso de pontuação). Apenas avaliações marcadas para avaliar a loja.';
+  if(!dashLoaded){note.textContent='Carregando respostas da Loja de Pista...';return}
+  if(!list.length){note.textContent+=' Não há respostas de Loja de Pista no período.';return}
+  mgrChart('mgrUnits',{type:'bar',data:{labels:list.map(x=>x.label),datasets:[{label:'Conformidade (%)',data:list.map(x=>+x.percent.toFixed(1)),backgroundColor:teal}]},options:{...mgrSettings({suffix:'%'}),indexAxis:'y',scales:{x:{min:0,max:115}},plugins:{...mgrSettings({suffix:'%'}).plugins,legend:{display:false}},onClick:(e,els)=>{if(els.length)mgrSelect('post',list[els[0].index].key)}}});
+  return;
+ }
+ let list=mgrRankRows(rows);note.textContent='Pontuação acumulada no mês: percentual ponderado. Clique para filtrar a unidade.';
+ if(!list.length){note.textContent='Sem avaliações deste tipo no mês.';return}
+ mgrChart('mgrUnits',{type:'bar',data:{labels:list.map(x=>x.label),datasets:[{label:'Aproveitamento (%)',data:list.map(x=>+x.percent.toFixed(1)),backgroundColor:blue}]},options:{...mgrSettings({suffix:'%'}),indexAxis:'y',scales:{x:{min:0,max:115}},plugins:{...mgrSettings({suffix:'%'}).plugins,legend:{display:false},tooltip:{callbacks:{afterLabel:c=>{let g=list[c.dataIndex];return g.earned+' / '+g.possible+' pontos · '+g.count+' avaliações'}}}},onClick:(e,els)=>{if(els.length)mgrSelect('post',list[els[0].index].key)}}});
+}
+function mgrMonthly(rows){
+ let month=explState.month;let all=explValid().filter(v=>v.data_visita.slice(0,7)<=month&&(!explState.type.size||explState.type.has(v.formulario))&&(!explState.region.size||explState.region.has(dashPost(v)?.regional||'Sem regional'))&&(!explState.post.size||explState.post.has(String(v.posto_id))));
+ let months=[...new Set(all.map(v=>v.data_visita.slice(0,7)))].sort();
+ let note=$('mgrEvolutionNote'),back=$('mgrBackRegion');
+ if(mgrEvolutionRegion&&!all.some(v=>(dashPost(v)?.regional||'Sem regional')===mgrEvolutionRegion))mgrEvolutionRegion=null;
+ if(note)note.textContent=mgrEvolutionRegion?'Regional: '+mgrEvolutionRegion+' · clique na linha de uma unidade para filtrar':'Histórico mensal até '+month+' · clique em uma linha regional para detalhar as unidades.';
+ if(back){back.style.display=mgrEvolutionRegion?'inline-block':'none';back.onclick=()=>{mgrEvolutionRegion=null;renderExplorer()}}
+ if(months.length<2){if(note)note.textContent='Evolução mensal indisponível: é necessário haver avaliações em pelo menos dois meses.';return}
+ let groups=new Map();
+ for(const v of all){let key=mgrEvolutionRegion?String(v.posto_id):(dashPost(v)?.regional||'Sem regional');if(mgrEvolutionRegion&&(dashPost(v)?.regional||'Sem regional')!==mgrEvolutionRegion)continue;let g=groups.get(key)||new Map(),m=v.data_visita.slice(0,7),a=g.get(m)||[];a.push(v);g.set(m,a);groups.set(key,g)}
+ let keys=[...groups.keys()].sort();
+ let palette=['#07847e','#2868a5','#df9940','#c15d63','#7e6abb','#668a4d','#ad658a','#558c96','#a77b42','#515c9c'];
+ let datasets=keys.map((k,i)=>({label:mgrEvolutionRegion?explLabel('post',k):k,data:months.map(m=>{let a=groups.get(k).get(m)||[];return a.length?+dashPointSummary(a).percent.toFixed(1):null}),borderColor:palette[i%palette.length],backgroundColor:palette[i%palette.length],tension:.2,spanGaps:false,pointRadius:4}));
+ mgrChart('mgrMonths',{type:'line',data:{labels:months.map(m=>new Date(m+'-02T12:00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})),datasets},options:{...mgrSettings({suffix:'%'}),scales:{y:{min:0,max:110}},onClick:(e,els)=>{if(!els.length)return;let key=keys[els[0].datasetIndex];if(mgrEvolutionRegion){mgrSelect('post',key)}else{mgrEvolutionRegion=key;renderExplorer()}}}});
+}
+async function mgrLoadAnswers(){
+ if(dashLoaded||mgrLoading)return;mgrLoading=true;
+ try{let all=[];for(let offset=0;offset<100000;offset+=900){let part=await request(sb.from('respostas').select('avaliacao_id,pergunta_id,resposta').range(offset,offset+899));all.push(...part);if(part.length<900)break}dashAnswers=all;dashLoaded=true;if($('dashboardView')&&!$('dashboardView').classList.contains('hidden'))renderExplorer()}
+ catch(e){console.error(e);msg('Não foi possível carregar respostas para o ranking de Loja de Pista.',true)}finally{mgrLoading=false}
+}
+let mgrLoading=false;
 function mgrPaint(rows){
  mgrDestroy();if(!rows.length)return;
- if(!window.Chart){$('explCharts').insertAdjacentHTML('beforeend','<p class="error">Não foi possível carregar a biblioteca de gráficos. Verifique a conexão com a internet.</p>');return}
- const teal='#07847e',blue='#2563a8',orange='#e5a14b',red='#c65b65',purple='#8a70bc',colors=[teal,blue,orange,red,purple,'#5f9b80','#c2a04d','#587f96'];
- const common={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{enabled:true}}};
+ if(!window.Chart){$('explCharts').insertAdjacentHTML('beforeend','<p class="error">Biblioteca Chart.js indisponível. Verifique a conexão.</p>');return}
+ const teal='#07847e',blue='#2563a8',orange='#e5a14b',red='#c65b65',purple='#8a70bc',colors=[teal,blue,orange,red,purple,'#5f9b80','#c2a04d','#587f96','#b65c96','#78a4ae'];
  let types=mgrGroup(rows,'type').sort((a,b)=>b.count-a.count);
- mgrChart('mgrTypes',{type:'doughnut',data:{labels:types.map(x=>x.label),datasets:[{data:types.map(x=>x.count),backgroundColor:colors}]},options:{...common,onClick:(e,els)=>{if(els.length)mgrSelect('type',types[els[0].index].key)}}});
- let bands=mgrGroup(rows,'score').sort((a,b)=>['0–49%','50–69%','70–84%','85–100%'].indexOf(a.key)-['0–49%','50–69%','70–84%','85–100%'].indexOf(b.key));
- mgrChart('mgrScore',{type:'pie',data:{labels:bands.map(x=>x.label),datasets:[{data:bands.map(x=>x.count),backgroundColor:[red,orange,blue,teal]}]},options:{...common,onClick:(e,els)=>{if(els.length)mgrSelect('score',bands[els[0].index].key)}}});
+ mgrChart('mgrTypes',{type:'doughnut',data:{labels:types.map(x=>x.label),datasets:[{data:types.map(x=>x.count),backgroundColor:colors}]},options:{...mgrSettings(),onClick:(e,els)=>{if(els.length)mgrSelect('type',types[els[0].index].key)}}});
  let regions=mgrGroup(rows,'region').sort((a,b)=>b.count-a.count);
- mgrChart('mgrRegions',{type:'bar',data:{labels:regions.map(x=>x.label),datasets:[{label:'Aproveitamento (%)',data:regions.map(x=>+x.percent.toFixed(1)),backgroundColor:teal}]},options:{...common,indexAxis:'y',scales:{x:{min:0,max:100}},plugins:{...common.plugins,legend:{display:false},tooltip:{callbacks:{afterLabel:c=>regions[c.dataIndex].earned+' / '+regions[c.dataIndex].possible+' pontos · '+regions[c.dataIndex].count+' avaliações'}}},onClick:(e,els)=>{if(els.length)mgrSelect('region',regions[els[0].index].key)}}});
- let units=mgrGroup(rows,'post').sort((a,b)=>b.percent-a.percent).slice(0,15);
- mgrChart('mgrUnits',{type:'bar',data:{labels:units.map(x=>x.label),datasets:[{label:'Aproveitamento (%)',data:units.map(x=>+x.percent.toFixed(1)),backgroundColor:blue}]},options:{...common,indexAxis:'y',scales:{x:{min:0,max:100}},plugins:{...common.plugins,legend:{display:false},tooltip:{callbacks:{afterLabel:c=>units[c.dataIndex].earned+' / '+units[c.dataIndex].possible+' pontos · '+units[c.dataIndex].count+' avaliações'}}},onClick:(e,els)=>{if(els.length)mgrSelect('post',units[els[0].index].key)}}});
- mgrChart('mgrPoints',{type:'bar',data:{labels:types.map(x=>x.label),datasets:[{label:'Média conquistada',data:types.map(x=>+(x.earned/x.count).toFixed(1)),backgroundColor:teal},{label:'Média possível',data:types.map(x=>+(x.possible/x.count).toFixed(1)),backgroundColor:orange}]},options:{...common}});
- let days=new Map();for(const v of rows){let key=v.data_visita;let g=days.get(key)||[];g.push(v);days.set(key,g)}let daily=[...days].sort((a,b)=>a[0].localeCompare(b[0])).map(([date,items])=>({date,...dashPointSummary(items)}));
- mgrChart('mgrDays',{type:'line',data:{labels:daily.map(x=>x.date.slice(8,10)),datasets:[{label:'Aproveitamento (%)',data:daily.map(x=>+x.percent.toFixed(1)),borderColor:teal,backgroundColor:teal,tension:.25,pointRadius:3}]},options:{...common,scales:{y:{min:0,max:100}},plugins:{...common.plugins,tooltip:{callbacks:{afterLabel:c=>daily[c.dataIndex].count+' avaliações · '+daily[c.dataIndex].earned+' / '+daily[c.dataIndex].possible+' pontos'}}}}});
+ mgrChart('mgrRegionPie',{type:'pie',data:{labels:regions.map(x=>x.label),datasets:[{data:regions.map(x=>x.count),backgroundColor:colors}]},options:{...mgrSettings(),onClick:(e,els)=>{if(els.length)mgrSelect('region',regions[els[0].index].key)}}});
+ mgrChart('mgrRegions',{type:'bar',data:{labels:regions.map(x=>x.label),datasets:[{label:'Aproveitamento (%)',data:regions.map(x=>+x.percent.toFixed(1)),backgroundColor:teal}]},options:{...mgrSettings({suffix:'%'}),indexAxis:'y',scales:{x:{min:0,max:115}},plugins:{...mgrSettings({suffix:'%'}).plugins,legend:{display:false}},onClick:(e,els)=>{if(els.length)mgrSelect('region',regions[els[0].index].key)}}});
+ let earned=types.map(x=>x.earned),lost=types.map(x=>x.lost);
+ mgrChart('mgrPoints',{type:'bar',data:{labels:types.map(x=>x.label),datasets:[{label:'Pontos conquistados',data:earned,backgroundColor:teal},{label:'Pontos não conquistados',data:lost,backgroundColor:orange}]},options:{...mgrSettings(),scales:{x:{stacked:true},y:{stacked:true}},plugins:{...mgrSettings().plugins,tooltip:{callbacks:{footer:items=>{let i=items[0]?.dataIndex||0;return types[i].earned+' de '+types[i].possible+' pontos · '+dashFormat(types[i].percent)+'%'}}}}}});
+ $('mgrRankType').value=mgrRankType;$('mgrRankType').onchange=e=>{mgrRankType=e.target.value;if(mgrRankType==='pista')mgrLoadAnswers();mgrRenderRanking(rows)};
+ mgrRenderRanking(rows);mgrMonthly(rows);
 }
-function renderExplorer(){if(profile?.papel!=='administrador'||!$('explMonth'))return;explMonthOptions();$('explSlicers').innerHTML=explSlice('type','Tipo de Avaliação')+explSlice('region','Regional')+explSlice('post','Unidade')+explSlice('score','Pontuação · faixa de aproveitamento');let rows=explRows();$('explSummary').innerHTML='<p class="muted">'+rows.length+' avaliações concluídas e ativas nesta segmentação. Clique em uma categoria para filtrar; clique novamente para retirar.</p>';$('explCharts').innerHTML=explRenderCharts(rows);mgrPaint(rows);$('explDetail').innerHTML='';document.querySelectorAll('[data-expl-key]').forEach(b=>b.onclick=()=>{let st=explState[b.dataset.explKey],v=b.dataset.explValue;st.has(v)?st.delete(v):st.add(v);renderExplorer()});document.querySelectorAll('[data-expl-drill]').forEach(b=>b.onclick=()=>{let key=b.dataset.explDrill==='type'?'type':b.dataset.explDrill==='region'?'region':'post',val=b.dataset.explId;explState[key].clear();explState[key].add(val);if(key==='region')explState.post.clear();renderExplorer();$('explCharts').scrollIntoView({behavior:'smooth',block:'start'})})}
-$('explMonth').addEventListener('change',e=>{explState.month=e.target.value;for(let k of ['type','region','post','score'])explState[k].clear();renderExplorer()});
-$('explReset').addEventListener('click',()=>{for(let k of ['type','region','post','score'])explState[k].clear();renderExplorer()});
+function renderExplorer(){if(profile?.papel!=='administrador'||!$('explMonth'))return;explMonthOptions();$('explSlicers').innerHTML=explSlice('type','Tipo de Avaliação')+explSlice('region','Regional')+explSlice('post','Unidade');let rows=explRows();$('explSummary').innerHTML='<p class="muted">'+rows.length+' avaliações concluídas e ativas nesta segmentação. Clique em uma categoria para filtrar; clique novamente para retirar.</p>';$('explCharts').innerHTML=explRenderCharts(rows);mgrPaint(rows);$('explDetail').innerHTML='';document.querySelectorAll('[data-expl-key]').forEach(b=>b.onclick=()=>{let st=explState[b.dataset.explKey],v=b.dataset.explValue;st.has(v)?st.delete(v):st.add(v);renderExplorer()});document.querySelectorAll('[data-expl-drill]').forEach(b=>b.onclick=()=>{let key=b.dataset.explDrill==='type'?'type':b.dataset.explDrill==='region'?'region':'post',val=b.dataset.explId;explState[key].clear();explState[key].add(val);if(key==='region')explState.post.clear();renderExplorer();$('explCharts').scrollIntoView({behavior:'smooth',block:'start'})})}
+$('explMonth').addEventListener('change',e=>{explState.month=e.target.value;for(let k of ['type','region','post'])explState[k].clear();renderExplorer()});
+$('explReset').addEventListener('click',()=>{for(let k of ['type','region','post'])explState[k].clear();renderExplorer()});
 
 // Dashboard administrativo: dados da sessão com RLS; métricas de desempenho excluem inativas e rascunhos.
 const dashFilters=['dashStart','dashEnd','dashType','dashRegion','dashPost','dashShift'];
@@ -344,5 +410,33 @@ function dashGroupDetail(kind,key){
 
 function dashAggregatePending(drafts){let m=new Map();drafts.forEach(v=>{let key=v.avaliador_id,cur=m.get(key)||{name:visitPerson(v),count:0,oldest:null};cur.count++;let date=v.criada_em?.slice(0,10);if(date&&(!cur.oldest||date<cur.oldest))cur.oldest=date;m.set(key,cur)});return [...m.values()].sort((a,b)=>b.count-a.count)}
 function dashCsv(){const arr=dashFiltered(),header=['Numero','Tipo','Status','Ativa','Posto','Regional','Avaliador','Data visita','Pontos obtidos','Pontos possiveis','Aproveitamento %'];let rows=arr.map(v=>[v.numero_visita||v.numero_sequencial,v.formulario,v.status,!v.inativa,dashPost(v)?.nome||'',dashPost(v)?.regional||'',visitPerson(v),v.data_visita||'',v.pontos_obtidos??'',v.pontos_possiveis??'',dashPercent(v)===null?'':dashFormat(dashPercent(v),2)]);let csv='\uFEFF'+[header,...rows].map(row=>row.map(x=>'"'+String(x??'').replaceAll('"','""')+'"').join(';')).join('\r\n');let a=document.createElement('a'),url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=url;a.download='cliente_oculto_indicadores_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+
+let pendingCharts=[];
+function renderPending(){
+ if(profile?.papel!=='administrador')return;
+ let valid=explValid(),months=[...new Set(valid.map(v=>v.data_visita.slice(0,7)))].sort().reverse();
+ let currentMonth=new Date().toISOString().slice(0,7);if(!months.includes(currentMonth))months.unshift(currentMonth);
+ let select=$('pendingMonth');if(!select.value||!months.includes(select.value))select.value=months.includes(explState.month)?explState.month:(months[0]||currentMonth);
+ let selected=select.value;
+ select.innerHTML=months.map(m=>'<option value="'+m+'">'+new Date(m+'-02T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})+'</option>').join('');
+ select.value=selected;select.onchange=renderPending;
+ for(const c of pendingCharts)c.destroy();pendingCharts=[];
+ const active=posts.filter(p=>p.ativo),records=valid.filter(v=>v.data_visita.slice(0,7)===selected);
+ const blocks=[{type:'posto',name:'Posto de Combustível'},{type:'conveniencia',name:'Loja de Conveniência'}];
+ let html='<div class="mgr-kpis">';
+ const sets=blocks.map(b=>{let list=active.map(p=>({p,rows:records.filter(v=>v.formulario===b.type&&v.posto_id===p.id)}));return {...b,list,missing:list.filter(x=>!x.rows.length),single:list.filter(x=>x.rows.length===1),duplicate:list.filter(x=>x.rows.length>1)}});
+ for(const b of sets)html+='<div><small>'+b.name+' · sem avaliação</small><strong>'+b.missing.length+'</strong></div><div><small>'+b.name+' · mais de uma</small><strong>'+b.duplicate.length+'</strong></div>';
+ html+='</div><p class="muted">Regra provisória: uma avaliação concluída e ativa por unidade, por tipo e por mês. Para Conveniência, considera todas as unidades ativas até que o cadastro identifique quais possuem loja.</p>';
+ $('pendingSummary').innerHTML=html;
+ $('pendingCharts').innerHTML=sets.map((b,i)=>'<div class="mgr-card"><h3>'+b.name+' · cobertura</h3><p class="muted">Quantidade de unidades por situação</p><div class="mgr-canvas"><canvas id="pendingChart'+i+'"></canvas></div></div>').join('');
+ $('pendingLists').innerHTML=sets.map((b,i)=>'<details class="dash-section" open><summary>'+b.name+' · consultar unidades</summary><div class="dash-section-body"><div class="pending-tabs"><button class="secondary" data-pending="'+i+':missing">Sem avaliação ('+b.missing.length+')</button><button class="secondary" data-pending="'+i+':duplicate">Mais de uma ('+b.duplicate.length+')</button><button class="secondary" data-pending="'+i+':single">Uma avaliação ('+b.single.length+')</button></div><div id="pendingList'+i+'"></div></div></details>').join('');
+ function listRender(i,category){
+  let b=sets[i],items=b[category]||[],target=$('pendingList'+i);
+  target.innerHTML='<p class="muted">'+items.length+' unidade(s) · '+(category==='missing'?'sem avaliação':category==='duplicate'?'com mais de uma avaliação':'com uma avaliação')+'</p><div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Regional</th><th>Unidade</th><th>Avaliações</th><th>Detalhes</th></tr></thead><tbody>'+items.map(x=>'<tr><td>'+escapeHtml(x.p.regional||'—')+'</td><td>'+escapeHtml(x.p.nome)+'</td><td>'+x.rows.length+'</td><td>'+escapeHtml(x.rows.map(v=>v.numero_visita||v.data_visita).join(' · ')||'—')+'</td></tr>').join('')+'</tbody></table></div>';
+ }
+ sets.forEach((b,i)=>{listRender(i,'missing');let el=$('pendingChart'+i);if(window.Chart){pendingCharts.push(new Chart(el,{type:'doughnut',data:{labels:['Sem avaliação','Uma avaliação','Mais de uma'],datasets:[{data:[b.missing.length,b.single.length,b.duplicate.length],backgroundColor:['#c65b65','#07847e','#e5a14b']}]},options:{...mgrSettings(),onClick:(e,els)=>{if(els.length)listRender(i,['missing','single','duplicate'][els[0].index])}}}))}});
+ document.querySelectorAll('[data-pending]').forEach(btn=>btn.onclick=()=>{let [i,category]=btn.dataset.pending.split(':');listRender(Number(i),category)});
+}
+
 boot().catch(err);
 </script></body></html>
