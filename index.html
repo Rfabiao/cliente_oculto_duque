@@ -121,13 +121,33 @@ main{max-width:880px;padding:12px}section,.panel{padding:16px;border-radius:16px
 <p class="muted" id="expenseStatus" role="status"></p>
 </div>
 <div id="expenseSummary"></div><div id="expenseTable"></div>
+<div class="visit-group" style="margin-top:26px">
+<h3>Relatórios de desempenho e cobertura</h3>
+<p class="muted">Relatórios baseados nos indicadores gerenciais. Os resultados consideram apenas avaliações concluídas e ativas.</p>
+<div class="report-filters">
+<div><label for="managementReport">Relatório</label><select id="managementReport">
+<option value="unidades">Desempenho por unidade</option>
+<option value="regionais">Desempenho por regional</option>
+<option value="diretores">Desempenho por diretor</option>
+<option value="seniores">Desempenho por diretor sênior</option>
+<option value="cobertura">Cobertura e pendências mensais</option>
+<option value="avaliacoes">Pontuação por avaliação</option>
+</select></div>
+<div><label for="managementMonth">Mês de referência</label><input id="managementMonth" type="month"></div>
+<div><label for="managementType">Tipo de avaliação</label><select id="managementType"><option value="">Todos</option><option value="posto">Posto</option><option value="conveniencia">Conveniência</option></select></div>
+<div><label for="managementRegion">Regional</label><select id="managementRegion"><option value="">Todas</option></select></div>
+</div>
+<div class="report-actions"><button id="managementExcel" type="button">Exportar Excel (.xlsx)</button><button id="managementPdf" class="secondary" type="button">Exportar PDF</button></div>
+<p class="muted" id="managementStatus"></p>
+</div>
+<div id="managementSummary"></div><div id="managementTable"></div>
 </section>
 <section id="editorView" class="hidden"><h2 id="visitTitle">Avaliação</h2><div id="editorBody"></div></section>
 <section id="postsView" class="hidden"><h2>Cadastro de postos</h2><p class="muted">O código é gerado pelo banco e não é reutilizado.</p><form id="postForm"><label>Nome da unidade</label><input id="postName" required maxlength="200"><button>Adicionar posto</button></form><label>Pesquisar postos</label><input id="postFilter" placeholder="Nome ou código"><div id="postList"></div></section>
 <section id="questionsView" class="hidden"><h2>Perguntas e ordem de exibição</h2><p class="muted">O código da pergunta nunca muda. Alterar a posição reorganiza apenas o formulário.</p><form id="questionForm"><div class="cols"><div><label>Formulário</label><select id="qForm"><option value="posto">Posto</option><option value="conveniencia">Loja de Conveniência</option></select></div><div><label>Bloco</label><select id="qBlock"><option value="A">A · Pontuação</option><option value="B">B · Complementar</option></select></div><div><label>Ordem desejada</label><input id="qOrder" type="number" min="1" value="1" required></div><div><label>Peso</label><input id="qWeight" type="number" min="0" value="10" required></div></div><label>Texto da pergunta</label><textarea id="qText" required rows="3"></textarea><button>Cadastrar pergunta</button></form><div id="questionList"></div></section>
 <section id="usersView" class="hidden"><h2>Cadastro de operadores</h2><p class="muted">Somente o Administrador cadastra operadores. O acesso é enviado por convite ao e-mail informado; o operador define sua senha. Não há cadastro público.</p>
 <form id="operatorForm" class="visit-group"><h3>Novo operador</h3><label for="operatorName">Nome completo *</label><input id="operatorName" required minlength="3" maxlength="160" autocomplete="name" placeholder="Nome do avaliador"><label for="operatorEmail">E-mail de acesso *</label><input id="operatorEmail" type="email" required autocomplete="off" placeholder="operador@empresa.com"><p class="muted">Perfil: Operador / Avaliador · Situação inicial: Ativo</p><button id="operatorSubmit" type="submit">Cadastrar e enviar convite</button></form>
-<h3>Usuários cadastrados</h3><p class="muted">A inativação bloqueia novos acessos e operações, mas mantém o histórico das avaliações e o nome do responsável.</p><div id="userList"></div></section>
+<h3>Avaliadores cadastrados</h3><p class="muted">Esta tela administra exclusivamente usuários com perfil Avaliador. Contas administrativas não são listadas nem podem ser alteradas aqui.</p><p class="muted">A inativação bloqueia novos acessos e operações, mas mantém o histórico das avaliações e o nome do responsável.</p><div id="userList"></div></section>
 </div></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script><script>
 'use strict';
 const URL_SB='https://nnpihcwbukitiakoywhj.supabase.co';
@@ -141,7 +161,7 @@ async function boot(){if(!window.supabase){msg('Não foi possível carregar a bi
 function showLoggedOut(){me=null;profile=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');$('newPassword').classList.add('hidden')}
 async function enter(user){try{me=user;profile=await request(sb.from('usuarios').select('id,nome,papel,ativo').eq('id',user.id).single());if(!profile.ativo)throw Error('Usuário inativo. Procure o administrador.');$('login').classList.add('hidden');$('app').classList.remove('hidden');$('userName').textContent=profile.nome||user.email;$('userRole').textContent=profile.papel==='administrador'?'Administrador':'Avaliador';$('tabs').innerHTML='<button data-view="home">Avaliações</button>'+(profile.papel==='administrador'?'<button data-view="dashboard">Indicadores</button><button data-view="pending">Pendências</button><button data-view="reports">Relatórios</button><button data-view="posts">Postos</button><button data-view="questions">Perguntas</button><button data-view="users">Usuários</button>':'');$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>showView(b.dataset.view));await reload();showView('home');msg('Acesso autenticado ao Supabase.')}catch(e){err(e);await sb.auth.signOut()}}
 async function reload(){posts=await request(sb.from('postos').select('*').order('codigo'));questions=await request(sb.from('perguntas').select('*').order('ordem_exibicao'));versions=await request(sb.from('versoes_perguntas').select('*'));visits=[];for(let off=0;off<50000;off+=800){let part=await request(sb.from('avaliacoes').select('*').order('criada_em',{ascending:false}).range(off,off+799));visits.push(...part);if(part.length<800)break;}people=profile.papel==='administrador'?await request(sb.from('usuarios').select('id,nome')):[{id:me.id,nome:profile.nome||me.email}];}
-function showView(name){for(const x of ['home','dashboard','pending','reports','editor','posts','questions','users'])$(x+'View').classList.toggle('hidden',x!==name);$('tabs').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='home')renderVisits();if(name==='dashboard'){renderExplorer();mgrLoadAnswers();}if(name==='pending')renderPending();if(name==='reports')renderExpenses();if(name==='posts')renderPosts();if(name==='questions')renderQuestions();if(name==='users')renderUsers()}
+function showView(name){for(const x of ['home','dashboard','pending','reports','editor','posts','questions','users'])$(x+'View').classList.toggle('hidden',x!==name);$('tabs').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='home')renderVisits();if(name==='dashboard'){renderExplorer();mgrLoadAnswers();}if(name==='pending')renderPending();if(name==='reports'){renderExpenses();renderManagementReports();}if(name==='posts')renderPosts();if(name==='questions')renderQuestions();if(name==='users')renderUsers()}
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{let d=await request(sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value}));await enter(d.user)}catch(e){err(e)}};
 $('reset').onclick=async()=>{try{await request(sb.auth.resetPasswordForEmail($('email').value.trim(),{redirectTo:location.origin+location.pathname}));msg('Se o e-mail estiver cadastrado, você receberá instruções para redefinir a senha.')}catch(e){err(e)}};
 $('passwordForm').onsubmit=async e=>{e.preventDefault();try{await request(sb.auth.updateUser({password:$('newPass').value}));$('newPassword').classList.add('hidden');msg('Senha atualizada. Faça login para continuar.');await sb.auth.signOut()}catch(e){err(e)}};
@@ -213,8 +233,9 @@ $('operatorForm').onsubmit=async e=>{e.preventDefault();const btn=$('operatorSub
  $('operatorForm').reset();await renderUsers();msg(data.message||'Operador convidado.');
  }catch(e){err(e)}finally{btn.disabled=false}};
 async function renderUsers(){try{
- let u=await request(sb.from('usuarios').select('id,nome,email,papel,ativo,criado_em').order('criado_em'));
- $('userList').innerHTML=u.map(x=>'<div class="item operator-row"><div class="operator-info"><b>'+escapeHtml(x.nome)+'</b><div class="muted">'+escapeHtml(x.email||'E-mail não informado')+'</div><div class="muted">'+(x.papel==='administrador'?'Administrador':'Operador')+' · '+(x.ativo?'Ativo':'Inativo')+'</div></div>'+(x.papel==='avaliador'?'<button class="secondary" data-operator="'+escapeHtml(x.id)+'">'+(x.ativo?'Inativar':'Ativar')+'</button>':'<span class="badge">Admin</span>')+'</div>').join('')||'<p>Nenhum usuário encontrado.</p>';
+ if(profile?.papel!=='administrador')throw Error('Acesso restrito ao administrador.');
+ let u=await request(sb.from('usuarios').select('id,nome,email,papel,ativo,criado_em').eq('papel','avaliador').order('criado_em'));
+ $('userList').innerHTML=u.map(x=>'<div class="item operator-row"><div class="operator-info"><b>'+escapeHtml(x.nome)+'</b><div class="muted">'+escapeHtml(x.email||'E-mail não informado')+'</div><div class="muted">'+(x.papel==='administrador'?'Administrador':'Operador')+' · '+(x.ativo?'Ativo':'Inativo')+'</div></div>'+(x.papel==='avaliador'?'<button class="secondary" data-operator="'+escapeHtml(x.id)+'">'+(x.ativo?'Inativar':'Ativar')+'</button>':'<span class="badge">Admin</span>')+'</div>').join('')||'<p>Nenhum avaliador encontrado.</p>';
  $('userList').querySelectorAll('[data-operator]').forEach(b=>b.onclick=async()=>{let x=u.find(z=>z.id===b.dataset.operator);if(!x)return;if(!confirm((x.ativo?'Inativar':'Ativar')+' o operador '+x.nome+'?'))return;b.disabled=true;try{const result=await operatorAction({action:'toggle',id:x.id});await renderUsers();msg(result.message)}catch(e){err(e);b.disabled=false}});
  }catch(e){err(e)}}
 
@@ -546,6 +567,91 @@ function exportExpensesPDF(){
  pdf.text('Data da despesa = data da visita. Somente avaliacoes concluidas e ativas.',14,28);
  pdf.autoTable({startY:33,head:[['Data','Codigo avaliacao','Avaliador','Posto','Tipo','Valor gasto','Nota fiscal']],body:rows.map(x=>[expenseDate(x.data),x.codigo,x.avaliador,x.posto,x.tipo,x.valor===null?'Nao informado':expenseBRL.format(x.valor).replace(/\u00a0/g,' '),x.nota?'Anexada':'Nao anexada']),styles:{fontSize:8,cellPadding:2.5,overflow:'linebreak'},headStyles:{fillColor:[16,108,115]},columnStyles:{3:{cellWidth:65},2:{cellWidth:44}},margin:{left:12,right:12,bottom:15},didDrawPage:data=>{pdf.setFontSize(8);pdf.text('Pagina '+data.pageNumber,270,203)}});
  pdf.save('Despesas_Cliente_Oculto_'+$('expenseMonth').value+'.pdf');
+ }catch(e){err(e)}
+}
+
+
+// Relatórios gerenciais independentes da visualização dos gráficos.
+const mgrBRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const mgrReportNames={unidades:'Desempenho por unidade',regionais:'Desempenho por regional',diretores:'Desempenho por diretor',seniores:'Desempenho por diretor sênior',cobertura:'Cobertura e pendências mensais',avaliacoes:'Pontuação por avaliação'};
+function managementReportData(){
+ const month=$('managementMonth').value,type=$('managementType').value,region=$('managementRegion').value,report=$('managementReport').value;
+ const relevant=visits.filter(v=>v.status==='concluida'&&!v.inativa&&v.data_visita?.slice(0,7)===month&&(!type||v.formulario===type)&&(!region||(dashPost(v)?.regional||'')===region));
+ const scored=relevant.filter(v=>Number(v.pontos_possiveis)>0);
+ const base={month,type,region,report,records:relevant.length,scored:scored.length};
+ const fmt=n=>Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:1});
+ const metric=a=>{let g=dashPointSummary(a);return {avaliacoes:a.length,pontos:g.earned,possiveis:g.possible,perdidos:g.lost,percentual:+g.percent.toFixed(2)}};
+ let columns=[],rows=[];
+ if(report==='cobertura'){
+  columns=['Tipo','Regional','Código do posto','Unidade','Avaliações concluídas','Situação'];
+  const active=posts.filter(p=>p.ativo&&(!region||p.regional===region));
+  const forms=type?[type]:['posto','conveniencia'];
+  for(const form of forms)for(const p of active){
+   let a=relevant.filter(v=>v.formulario===form&&v.posto_id===p.id);
+   rows.push([form==='posto'?'Posto':'Conveniência',p.regional||'—',p.codigo,p.nome,a.length,a.length===0?'Sem avaliação':a.length===1?'Uma avaliação':'Mais de uma']);
+  }
+  rows.sort((a,b)=>a[0].localeCompare(b[0],'pt-BR')||a[1].localeCompare(b[1],'pt-BR')||String(a[3]).localeCompare(String(b[3]),'pt-BR'));
+ }else if(report==='avaliacoes'){
+  columns=['Data','Código da avaliação','Tipo','Regional','Código do posto','Unidade','Diretor sênior','Diretor','Avaliador','Pontos conquistados','Pontos possíveis','Pontos perdidos','Aproveitamento (%)'];
+  rows=scored.map(v=>{let p=dashPost(v)||{},g=metric([v]);return [expenseDate(v.data_visita),v.numero_visita||v.id,v.formulario==='posto'?'Posto':'Conveniência',p.regional||'—',p.codigo||'—',p.nome||'—',p.diretor_senior||'—',p.diretor||'—',visitPerson(v),g.pontos,g.possiveis,g.perdidos,g.percentual]});
+  rows.sort((a,b)=>b[0].localeCompare(a[0]));
+ }else{
+  let keyFn={
+   unidades:v=>[String(v.posto_id),dashPost(v)?.nome||'Unidade não identificada',dashPost(v)?.regional||'—'],
+   regionais:v=>[dashPost(v)?.regional||'Sem regional'],
+   diretores:v=>[dashPost(v)?.diretor||'Não informado'],
+   seniores:v=>[dashPost(v)?.diretor_senior||'Não informado']
+  }[report];
+  let groups=new Map();
+  for(const v of scored){let key=keyFn(v),id=JSON.stringify(key),g=groups.get(id)||{key,items:[]};g.items.push(v);groups.set(id,g)}
+  columns=report==='unidades'?['Código do posto','Unidade','Regional','Avaliações','Pontos conquistados','Pontos possíveis','Pontos perdidos','Aproveitamento (%)']:['Agrupamento','Avaliações','Pontos conquistados','Pontos possíveis','Pontos perdidos','Aproveitamento (%)'];
+  rows=[...groups.values()].map(g=>{let m=metric(g.items);return report==='unidades'?[dashPost(g.items[0])?.codigo||'—',g.key[1],g.key[2],m.avaliacoes,m.pontos,m.possiveis,m.perdidos,m.percentual]:[g.key[0],m.avaliacoes,m.pontos,m.possiveis,m.perdidos,m.percentual]});
+  rows.sort((a,b)=>Number(b[b.length-1])-Number(a[a.length-1]));
+ }
+ return {...base,columns,rows,totals:metric(scored)};
+}
+function renderManagementReports(){
+ if(profile?.papel!=='administrador')return;
+ const m=$('managementMonth');
+ if(!m.value)m.value=new Date().toISOString().slice(0,7);
+ const region=$('managementRegion'),old=region.value;
+ region.innerHTML='<option value="">Todas</option>'+[...new Set(posts.map(p=>p.regional).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')).map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(x)+'</option>').join('');
+ region.value=old;
+ for(const id of ['managementMonth','managementType','managementRegion','managementReport'])$(id).onchange=renderManagementReports;
+ const d=managementReportData(),t=d.totals;
+ $('managementSummary').innerHTML='<div class="report-summary"><div><small>Avaliações concluídas</small><strong>'+d.records+'</strong></div><div><small>Pontos conquistados</small><strong>'+t.pontos.toLocaleString('pt-BR')+'</strong></div><div><small>Pontos possíveis</small><strong>'+t.possiveis.toLocaleString('pt-BR')+'</strong></div><div><small>Aproveitamento</small><strong>'+t.percentual.toLocaleString('pt-BR')+'%</strong></div></div>';
+ const table='<div class="report-table"><table><thead><tr>'+d.columns.map(x=>'<th>'+escapeHtml(x)+'</th>').join('')+'</tr></thead><tbody>'+d.rows.map(row=>'<tr>'+row.map(v=>'<td>'+escapeHtml(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+ $('managementTable').innerHTML=d.rows.length?table:'<p class="report-empty">Nenhum registro para os filtros selecionados.</p>';
+ $('managementStatus').textContent=d.rows.length+' linha(s) · '+mgrReportNames[d.report]+'.'+(d.report==='cobertura'?' Atenção: todas as unidades ativas são consideradas elegíveis para Conveniência até o cadastro dessa informação.':'');
+ $('managementExcel').onclick=()=>exportManagementExcel();
+ $('managementPdf').onclick=()=>exportManagementPDF();
+}
+function exportManagementExcel(){
+ try{
+  if(profile?.papel!=='administrador')throw Error('Acesso restrito ao administrador.');
+  if(!window.XLSX)throw Error('Biblioteca Excel indisponível.');
+  const d=managementReportData(),wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([d.columns,...d.rows]);
+  ws['!cols']=d.columns.map(x=>({wch:Math.min(42,Math.max(16,x.length+4))}));
+  if(d.rows.length)ws['!autofilter']={ref:ws['!ref']};
+  XLSX.utils.book_append_sheet(wb,ws,'Dados');
+  const summary=XLSX.utils.aoa_to_sheet([['Cliente Oculto Duque — '+mgrReportNames[d.report]],['Mês de referência',d.month],['Tipo de avaliação',d.type||'Todos'],['Regional',d.region||'Todas'],['Avaliações concluídas',d.records],['Pontos conquistados',d.totals.pontos],['Pontos possíveis',d.totals.possiveis],['Aproveitamento (%)',d.totals.percentual],['Critério','Somente avaliações concluídas e ativas']]);
+  summary['!cols']=[{wch:30},{wch:70}];
+  XLSX.utils.book_append_sheet(wb,summary,'Resumo');
+  XLSX.writeFile(wb,'Cliente_Oculto_'+d.report+'_'+d.month+'.xlsx');
+ }catch(e){err(e)}
+}
+function exportManagementPDF(){
+ try{
+  if(profile?.papel!=='administrador')throw Error('Acesso restrito ao administrador.');
+  if(!window.jspdf?.jsPDF)throw Error('Biblioteca PDF indisponível.');
+  const d=managementReportData(),pdf=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  if(typeof pdf.autoTable!=='function')throw Error('Componente PDF de tabelas indisponível.');
+  pdf.setFontSize(14);pdf.text('Cliente Oculto - Duque | '+mgrReportNames[d.report],12,14);
+  pdf.setFontSize(9);pdf.text('Mes: '+d.month+' | Tipo: '+(d.type||'Todos')+' | Regional: '+(d.region||'Todas'),12,21);
+  pdf.text('Avaliacoes: '+d.records+' | Pontos: '+d.totals.pontos+' / '+d.totals.possiveis+' | Aproveitamento: '+d.totals.percentual+'%',12,27);
+  pdf.autoTable({startY:32,head:[d.columns],body:d.rows.map(r=>r.map(v=>String(v??''))),theme:'striped',styles:{fontSize:d.columns.length>10?5.7:7,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[12,109,115]},margin:{left:10,right:10,bottom:14},didDrawPage:data=>{pdf.setFontSize(8);pdf.text('Pagina '+data.pageNumber,272,204)}});
+  pdf.save('Cliente_Oculto_'+d.report+'_'+d.month+'.pdf');
  }catch(e){err(e)}
 }
 
